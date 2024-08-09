@@ -56,6 +56,10 @@ class UpsamplingAdd(nn.Module):
         return x + x_skip
 
 class Decoder(nn.Module):
+    """
+    I can bit the shit out of this code too!
+    Let's go!
+    """
     def __init__(self, in_channels, n_classes, predict_future_flow):
         super().__init__()
         backbone = resnet18(pretrained=False, zero_init_residual=True)
@@ -139,6 +143,8 @@ class Decoder(nn.Module):
             x[bev_flip2_index] = torch.flip(x[bev_flip2_index], [-2]) # note [-2] instead of [-3], since Y is gone now
             x[bev_flip1_index] = torch.flip(x[bev_flip1_index], [-1])
 
+
+        """x is passed on to different types of heads"""
         feat_output = self.feat_head(x)
         segmentation_output = self.segmentation_head(x)
         instance_center_output = self.instance_center_head(x)
@@ -161,16 +167,25 @@ class Encoder_res101(nn.Module):
         super().__init__()
         self.C = C
         resnet = torchvision.models.resnet101(pretrained=True)
-        self.backbone = nn.Sequential(*list(resnet.children())[:-4])
+        """excluding the last 4 layers"""
+        self.backbone = nn.Sequential(*list(resnet.children())[:-4]) 
         self.layer3 = resnet.layer3
-
+        
+        """
+        the operation below does two things
+        1. changes the depth(channel) of the feature map while keeping the spatial resolution same
+        2. furthur feature encoding
+        """
         self.depth_layer = nn.Conv2d(512, self.C, kernel_size=1, padding=0)
         self.upsampling_layer = UpsamplingConcat(1536, 512)
 
     def forward(self, x):
         x1 = self.backbone(x)
         x2 = self.layer3(x1)
-        x = self.upsampling_layer(x2, x1)
+
+        """concat two feature maps"""
+        x = self.upsampling_layer(x2, x1) 
+
         x = self.depth_layer(x)
 
         return x
@@ -286,6 +301,10 @@ class Encoder_eff(nn.Module):
         return x
 
 class Segnet(nn.Module):
+    """
+    Okay, I can do this!
+    I am going to understand this fucking code.
+    """
     def __init__(self, Z, Y, X, vox_util=None, 
                  use_radar=False,
                  use_lidar=False,
@@ -305,13 +324,18 @@ class Segnet(nn.Module):
         self.rand_flip = rand_flip
         self.latent_dim = latent_dim
         self.encoder_type = encoder_type
-
+        
+        """
+        These are the mean and standard deviation for the ImageNet
+        These values are important, because they will help match the distribution of nuScenes to the normalized ImagenNet's data distribution
+        """
         self.mean = torch.as_tensor([0.485, 0.456, 0.406]).reshape(1,3,1,1).float().cuda()
         self.std = torch.as_tensor([0.229, 0.224, 0.225]).reshape(1,3,1,1).float().cuda()
         
         # Encoder
         self.feat2d_dim = feat2d_dim = latent_dim
-        if encoder_type == "res101":
+        """ResNet-101 is the default version"""
+        if encoder_type == "res101": 
             self.encoder = Encoder_res101(feat2d_dim)
         elif encoder_type == "res50":
             self.encoder = Encoder_res50(feat2d_dim)
@@ -341,18 +365,23 @@ class Segnet(nn.Module):
                 nn.InstanceNorm2d(latent_dim),
                 nn.GELU(),
             )
-        else:
+        else: # only RGB
             if self.do_rgbcompress:
                 self.bev_compressor = nn.Sequential(
-                    nn.Conv2d(feat2d_dim*Y, feat2d_dim, kernel_size=3, padding=1, stride=1, bias=False),
-                    nn.InstanceNorm2d(latent_dim),
-                    nn.GELU(),
+                    nn.Conv2d(feat2d_dim*Y, feat2d_dim*1, kernel_size=3, padding=1, stride=1, bias=False), # this conv operation will keep the spatial resolution same. it only reduces the output channel
+                    nn.InstanceNorm2d(latent_dim), # idk
+                    nn.GELU(),  #idk
                 )
             else:
                 # use simple sum
                 pass
 
         # Decoder
+        """
+        the decoder does the following things
+        1. process multi-modal data using u-net structure 
+        2. multiple heads to create different types of output
+        """
         self.decoder = Decoder(
             in_channels=latent_dim,
             n_classes=1,
@@ -386,7 +415,7 @@ class Segnet(nn.Module):
             - (B, 1, Z, Y, X) when use_lidar = True
         '''
         B, S, C, H, W = rgb_camXs.shape
-        assert(C==3)
+        assert(C==3) # assert that there is an error with the channel of the images.
         # reshape tensors
         __p = lambda x: utils.basic.pack_seqdim(x, B)
         __u = lambda x: utils.basic.unpack_seqdim(x, B)
@@ -397,7 +426,7 @@ class Segnet(nn.Module):
 
         # rgb encoder
         device = rgb_camXs_.device
-        rgb_camXs_ = (rgb_camXs_ + 0.5 - self.mean.to(device)) / self.std.to(device)
+        rgb_camXs_ = (rgb_camXs_ + 0.5 - self.mean.to(device)) / self.std.to(device) # normaliza the input data
         if self.rand_flip:
             B0, _, _, _ = rgb_camXs_.shape
             self.rgb_flip_index = np.random.choice([0,1], B0).astype(bool)
@@ -417,6 +446,12 @@ class Segnet(nn.Module):
             xyz_camA = self.xyz_camA.to(feat_camXs_.device).repeat(B*S,1,1)
         else:
             xyz_camA = None
+
+        """
+        1. Go into vox.py.
+        2. Find unproject_image_to_mem() function
+        3. grid_sample() does the bilinear interpolation
+        """
         feat_mems_ = vox_util.unproject_image_to_mem(
             feat_camXs_,
             utils.basic.matmul2(featpix_T_cams_, camXs_T_cam0_),
@@ -424,7 +459,10 @@ class Segnet(nn.Module):
             xyz_camA=xyz_camA)
         feat_mems = __u(feat_mems_) # B, S, C, Z, Y, X
 
-        mask_mems = (torch.abs(feat_mems) > 0).float()
+        
+        mask_mems = (torch.abs(feat_mems) > 0).float() # create valid volume mask
+
+        """By executing the code below, the 6 3D features are finally combined into one 3D feature"""
         feat_mem = utils.basic.reduce_masked_mean(feat_mems, mask_mems, dim=1) # B, C, Z, Y, X
 
         if self.rand_flip:
@@ -438,6 +476,9 @@ class Segnet(nn.Module):
                 rad_occ_mem0[self.bev_flip2_index] = torch.flip(rad_occ_mem0[self.bev_flip2_index], [-3])
 
         # bev compressing
+        """
+        At the end feat_bev will be created which represents the combined bev feature
+        """
         if self.use_radar:
             assert(rad_occ_mem0 is not None)
             if not self.use_metaradar:
@@ -456,12 +497,19 @@ class Segnet(nn.Module):
             rad_bev_ = rad_occ_mem0.permute(0, 1, 3, 2, 4).reshape(B, Y, Z, X)
             feat_bev_ = torch.cat([feat_bev_, rad_bev_], dim=1)
             feat_bev = self.bev_compressor(feat_bev_)
-        else: # rgb only
+        else: # RGB only
+            """
+            let's first look at the RGB only code
+            """
             if self.do_rgbcompress:
-                feat_bev_ = feat_mem.permute(0, 1, 3, 2, 4).reshape(B, self.feat2d_dim*Y, Z, X)
+                """
+                1. permute() manipulates the dimensions
+                2. reshape reshapes the tensor
+                """
+                feat_bev_ = feat_mem.permute(0, 1, 3, 2, 4).reshape(B, self.feat2d_dim*Y, Z, X) 
                 feat_bev = self.bev_compressor(feat_bev_)
             else:
-                feat_bev = torch.sum(feat_mem, dim=3)
+                feat_bev = torch.sum(feat_mem, dim=3) # the simplest method
 
         # bev decoder
         out_dict = self.decoder(feat_bev, (self.bev_flip1_index, self.bev_flip2_index) if self.rand_flip else None)

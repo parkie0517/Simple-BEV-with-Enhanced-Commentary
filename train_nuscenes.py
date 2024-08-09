@@ -41,11 +41,16 @@ bounds = (XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX)
 Z, Y, X = 200, 8, 200
 
 def requires_grad(parameters, flag=True):
+    """
+    this function is used to toggle on/off gradient flow
+    """
     for p in parameters:
         p.requires_grad = flag
         
 def fetch_optimizer(lr, wdecay, epsilon, num_steps, params):
-    """ Create the optimizer and learning rate scheduler """
+    """
+    Create the optimizer and learning rate scheduler
+    """
     optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=wdecay, eps=epsilon)
 
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, lr, num_steps+100,
@@ -359,6 +364,15 @@ def main(
 
     # set up model & seg loss
     seg_loss_fn = SimpleLoss(2.13).to(device) # value from lift-splat
+    """
+    Z, Y, X: (200, 8, 200)
+    vox_util: ?
+    use_radar, use_lidar, use_metaradar: bool values
+    do_rgbcompress: determines whether to sum or use conv to sum the vertical dimension of the rgb feature map
+    rand_flip: data augmentation?
+    latent_dim: determines the input channel of the CNN used for Simple-BEV
+    encoder_type: determines the type of the encoder
+    """
     model = Segnet(Z, Y, X, vox_util, use_radar=use_radar, use_lidar=use_lidar, use_metaradar=use_metaradar, do_rgbcompress=do_rgbcompress, encoder_type=encoder_type, rand_flip=rand_flip)
     model = model.to(device)
     model = torch.nn.DataParallel(model, device_ids=device_ids)

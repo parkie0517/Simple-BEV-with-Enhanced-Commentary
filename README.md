@@ -13,3 +13,9 @@ This repository is an enhanced version of the official implementation of **Simpl
 
 - **Comments and Explanations:** Added detailed comments across the important code, explaining the functionality, purpose, and thought process behind each section of the code.
 - **Readability Improvements:** Minor adjustments to code formatting and structure to enhance readability.
+
+## Setup
+- conda create -n hj_simplebev
+- conda activate hj_simplebev
+- git clone https://github.com/parkie0517/Simple-BEV-with-Enhanced-Commentary.git
+- 

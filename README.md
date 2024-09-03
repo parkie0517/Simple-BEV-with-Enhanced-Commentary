@@ -15,7 +15,25 @@ This repository is an enhanced version of the official implementation of **Simpl
 - **Readability Improvements:** Minor adjustments to code formatting and structure to enhance readability.
 
 ## Setup
-- conda create -n hj_simplebev
-- conda activate hj_simplebev
-- git clone https://github.com/parkie0517/Simple-BEV-with-Enhanced-Commentary.git
-- 
+First, run the code below step by step.  
+Btw, the version of python that I used was `3.10.14`  
+You can also choose your own conda environment name.  
+```
+conda create -n hj_simplebev
+conda activate hj_simplebev
+git clone https://github.com/parkie0517/Simple-BEV-with-Enhanced-Commentary.git
+conda install pytorch=1.12.0 torchvision=0.13.0 cudatoolkit=11.3 -c pytorch
+```
+Now, let's check for CUDA availability.  
+Change the directory to the clonned repository.  
+Run the code below by specifying the number of the gpu using the `-n` argument.  
+If you are running on a single gpu, run the code without any arguments.  
+```
+python ./test_cuda.py -n 3
+```
+Now, run the rest of the code below.  
+```
+conda install pip
+pip install -r requirements.txt
+```
+Now, download the `nuScenes` dataset.  

@@ -13,6 +13,7 @@ This repository is an enhanced version of the official implementation of **Simpl
 
 - **Comments and Explanations:** Added detailed comments across the important code, explaining the functionality, purpose, and thought process behind each section of the code.
 - **Readability Improvements:** Minor adjustments to code formatting and structure to enhance readability.
+- **Errors due to version disparity:** Due to some errors because of the version disparity, I made changes to some part of the code.
 
 ## Setup
 First, run the code below step by step.  
@@ -37,3 +38,4 @@ conda install pip
 pip install -r requirements.txt
 ```
 Now, download the `nuScenes` dataset.  
+The structure of the dataset folder will be updated soon.  

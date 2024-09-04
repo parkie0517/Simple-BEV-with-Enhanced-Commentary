@@ -274,7 +274,7 @@ def main(
         # val/test
         log_freq=100,
         shuffle=False,
-        dset='trainval', # we will just use val
+        dset='trainval', # default is trainval
         batch_size=8,
         nworkers=12,
         # data/log/load directories
@@ -324,8 +324,8 @@ def main(
         'ncams': ncams,
     }
     _, val_dataloader = nuscenesdataset.compile_data(
-        dset,
-        data_dir,
+        dset, # mini
+        data_dir, # "/mnt/ssd2/heejun/dataset/nuscenes"
         data_aug_conf=data_aug_conf,
         centroid=scene_centroid_py,
         bounds=bounds,

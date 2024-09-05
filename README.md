@@ -35,3 +35,9 @@ pip install -r requirements.txt
 ```
 Now, download the `nuScenes` dataset.  
 The structure of the dataset folder will be updated soon.  
+**STRUCTURE OF THE IMAGE GOES HERE**  
+
+Download the pre-trained RGB model.  
+```
+sh get_rgb_model.sh
+```

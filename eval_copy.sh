@@ -10,12 +10,13 @@ MODEL_NAME="8x5_5e-4_rgb12_22:43:46"
 EXP_NAME="12" # evaluate rgb00 model
 
 python eval_nuscenes.py \
-       --batch_size=16 \
+       --batch_size=4 \
        --exp_name=${EXP_NAME} \
-       --dset='mini' \
+       --dset='trainval' \
        --data_dir=$DATA_DIR \
        --log_dir='logs_eval_nuscenes' \
        --init_dir="checkpoints/${MODEL_NAME}" \
+       --use_radar=False \
        --res_scale=2 \
        --device_ids=[3]
 

@@ -1051,7 +1051,10 @@ class VizData(NuscData):
         intrins[0] = intrin_ref
         intrins[refcam_id] = intrin_0
         
-        radar_data = self.get_radar_data(rec, nsweeps=self.nsweeps)
+        # There is a problem here
+        #radar_data = self.get_radar_data(rec, nsweeps=self.nsweeps)
+        # Modification
+        radar_data = radar_data = np.zeros((700 * self.nsweeps, 3))
 
         lidar_extra = lidar_data[3:]
         lidar_data = lidar_data[:3]
@@ -1175,7 +1178,14 @@ class VizData(NuscData):
         all_egopose = []
         for index_t in self.indices[index]:
             # print('grabbing index %d' % index_t)
-            imgs, rots, trans, intrins, lidar0_data, lidar0_extra, lidar_data, lidar_extra, lrtlist, vislist, tidlist, scorelist, seg_bev, valid_bev, center_bev, offset_bev, size_bev, ry_bev, ycoord_bev, radar_data, egopose = self.get_single_item(index_t, cams, refcam_id=refcam_id)
+            imgs, rots, trans, intrins, lidar0_data, lidar0_extra, lidar_data, lidar_extra, \
+            lrtlist, vislist, tidlist, scorelist, \
+            seg_bev, valid_bev, center_bev, offset_bev, size_bev, ry_bev, ycoord_bev, \
+            radar_data, egopose = self.get_single_item(index_t, cams, refcam_id=refcam_id)
+            """
+            There seems to be a problem when running the function above.
+            This function is ran even when I do not want to use the radar data.
+            """
 
             all_imgs.append(imgs)
             all_rots.append(rots)

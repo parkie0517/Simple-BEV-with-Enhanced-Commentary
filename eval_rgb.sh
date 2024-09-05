@@ -24,7 +24,8 @@ python eval_nuscenes.py \
 
 Explanation of the flags
 dset: should be either one of `mini` or `trainval`
-res_scale: used to divide the size of the rgb resolution
+res_scale: used to increase the size of the rgb resolution
+       ex) input rgb size: (224, 400) x res_scale
 device_ids: gpus that you wish to use
        ex) `[3]` means that you only want to use the 4th gpu. `[0, 1, 2, 3]' means that you want to use gpu from 1 to 4. 
 

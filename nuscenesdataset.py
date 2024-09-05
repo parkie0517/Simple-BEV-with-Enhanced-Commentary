@@ -1052,9 +1052,9 @@ class VizData(NuscData):
         intrins[refcam_id] = intrin_0
         
         # There is a problem here
-        #radar_data = self.get_radar_data(rec, nsweeps=self.nsweeps)
+        radar_data = self.get_radar_data(rec, nsweeps=self.nsweeps)
         # Modification
-        radar_data = radar_data = np.zeros((700 * self.nsweeps, 3))
+        #radar_data = radar_data = np.zeros((700 * self.nsweeps, 3))
 
         lidar_extra = lidar_data[3:]
         lidar_data = lidar_data[:3]

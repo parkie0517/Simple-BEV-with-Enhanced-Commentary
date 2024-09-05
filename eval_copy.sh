@@ -17,4 +17,14 @@ python eval_nuscenes.py \
        --log_dir='logs_eval_nuscenes' \
        --init_dir="checkpoints/${MODEL_NAME}" \
        --res_scale=2 \
-       --device_ids=[3] # use the 4th gpu
+       --device_ids=[3]
+
+:<<"End"
+
+Explanation of the flags
+dset: should be either one of `mini` or `trainval`
+res_scale: used to divide the size of the rgb resolution
+device_ids: gpus that you wish to use
+       ex) `[3]` means that you only want to use the 4th gpu. `[0, 1, 2, 3]' means that you want to use gpu from 1 to 4. 
+
+End

@@ -4,12 +4,14 @@ import argparse
 import numpy as np
 import saverloader
 from fire import Fire
-from nets.segnet import Segnet
+# from nets.segnet import Segnet
+from nets.segnet_multi import Segnet_multi
 import utils.misc
 import utils.improc
 import utils.vox
 import random
-import nuscenesdataset
+# import nuscenesdataset
+import nuscenesdataset_depth as nuscenesdataset
 import torch
 torch.multiprocessing.set_sharing_strategy('file_system')
 import torch.nn as nn
@@ -34,7 +36,7 @@ ZMIN, ZMAX = -50, 50
 YMIN, YMAX = -5, 5
 bounds = (XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX)
 
-Z, Y, X = 200, 8, 200 # size of the voxel grid
+Z, Y, X = 200, 8, 200
 
 def requires_grad(parameters, flag=True):
     for p in parameters:
@@ -110,11 +112,13 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     metrics = {}
     total_loss = torch.tensor(0.0, requires_grad=True).to(device)
 
-    imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, radar_data, egopose = d
+    # imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, ped_seg_bev_g, ped_valid_bev_g, ped_center_bev_g, ped_offset_bev_g, lane_seg_bev_g, lane_valid_bev_g, radar_data,  egopose, y_axis_rot  = d
+    imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, ped_seg_bev_g, ped_valid_bev_g, ped_center_bev_g, ped_offset_bev_g, lane_seg_bev_g, lane_valid_bev_g, radar_data,  egopose, y_axis_rot, depths  = d
 
     B0,T,S,C,H,W = imgs.shape
     assert(T==1)
-
+    
+    
     # eliminate the time dimension
     imgs = imgs[:,0]
     rots = rots[:,0]
@@ -135,6 +139,9 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     radar_data = radar_data[:,0]
     egopose = egopose[:,0]
     
+    y_axis_rot=y_axis_rot[:,0]
+    y_axis_rot = y_axis_rot.to(device)
+    
     origin_T_velo0t = egopose.to(device) # B,T,4,4
 
     lrtlist_velo = lrtlist_velo.to(device)
@@ -147,7 +154,7 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     valid_bev_g = valid_bev_g.to(device)
     center_bev_g = center_bev_g.to(device)
     offset_bev_g = offset_bev_g.to(device)
-
+    
     xyz_velo0 = pts.to(device).permute(0, 2, 1)
     rad_data = radar_data.to(device).permute(0, 2, 1) # B, R, 19
     xyz_rad = rad_data[:,:,:3]
@@ -169,12 +176,27 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
 
     velo_T_cams = utils.geom.merge_rtlist(rots, trans).to(device)
     cams_T_velo = __u(utils.geom.safe_inverse(__p(velo_T_cams)))
-    
+        
     cam0_T_camXs = utils.geom.get_camM_T_camXs(velo_T_cams, ind=0)
     camXs_T_cam0 = __u(utils.geom.safe_inverse(__p(cam0_T_camXs)))
     cam0_T_camXs_ = __p(cam0_T_camXs)
     camXs_T_cam0_ = __p(camXs_T_cam0)
+        
+    lidar_T_velo=torch.zeros((1,4,4))  
+    lidar_T_velo[0,0,1]=-1               
+    lidar_T_velo[0,1,2]=-1              
+    lidar_T_velo[0,2,0]=1             
+    lidar_T_velo[0,3,3]=1  
+    velo_T_lidar=torch.zeros((1,4,4))   
+    velo_T_lidar[0,0,2]=1               
+    velo_T_lidar[0,1,0]=-1               
+    velo_T_lidar[0,2,1]=-1              
+    velo_T_lidar[0,3,3]=1         
     
+    lidar_T_velo=lidar_T_velo.to(velo_T_cams.device) 
+                     
+    lidar_T_cams=torch.matmul(lidar_T_velo,velo_T_cams)
+    lidar_T_cams=torch.matmul(y_axis_rot,lidar_T_cams)
     xyz_cam0 = utils.geom.apply_4x4(cams_T_velo[:,0], xyz_velo0)
     rad_xyz_cam0 = utils.geom.apply_4x4(cams_T_velo[:,0], xyz_rad)
 
@@ -205,14 +227,20 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     elif model.module.use_metaradar:
         assert(False) # cannot use_metaradar without use_radar
 
-    cam0_T_camXs = cam0_T_camXs
+    # cam0_T_camXs = cam0_T_camXs
 
     lrtlist_cam0_g = lrtlist_cam0
 
-    _, feat_bev_e, seg_bev_e, center_bev_e, offset_bev_e = model(
+    # _, feat_bev_e, seg_bev_e, center_bev_e, offset_bev_e = model(
+    #         rgb_camXs=rgb_camXs,
+    #         pix_T_cams=pix_T_cams,
+    #         cam0_T_camXs=lidar_T_cams,
+    #         vox_util=vox_util,
+    #         rad_occ_mem0=in_occ_mem0)
+    _, feat_bev_e, seg_bev_e, center_bev_e, offset_bev_e, ped_seg_e, ped_center_e, ped_offset_e, lane_seg_e, depths_pred=model(
             rgb_camXs=rgb_camXs,
             pix_T_cams=pix_T_cams,
-            cam0_T_camXs=cam0_T_camXs,
+            cam0_T_camXs=lidar_T_cams,
             vox_util=vox_util,
             rad_occ_mem0=in_occ_mem0)
 
@@ -249,10 +277,22 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     metrics['ce_loss'] = ce_loss.item()
     metrics['center_loss'] = center_loss.item()
     metrics['offset_loss'] = offset_loss.item()
+    metrics['iou'] = iou.item()
 
+    depths = depths.squeeze()-0.5
+    depths_pred = __u(depths_pred.squeeze())-0.5
+    depths_vis = torch.zeros((B,S,C,H,W)) - 0.5
+    # import pdb;pdb.set_trace()
+    # depths_vis[:,:,1,:,:] = -depths
+    depths_vis[:,:,0,:,:] = depths
+    depths_pred_vis = torch.zeros((B,S,C,H,W)) - 0.5
+    # depths_pred_vis[:,:,1,:,:] = -depths_pred
+    depths_pred_vis[:,:,0,:,:] = depths_pred
+    
+    
     if True:
-        # if model.module.use_radar or model.module.use_lidar:
-        #     sw.summ_occ('0_inputs/rad_occ_mem0', rad_occ_mem0)
+        if model.module.use_radar or model.module.use_lidar:
+            sw.summ_occ('0_inputs/rad_occ_mem0', rad_occ_mem0)
         sw.summ_occ('0_inputs/occ_mem0', occ_mem0)
         sw.summ_rgb('0_inputs/rgb_camXs', torch.cat(rgb_camXs[0:1].unbind(1), dim=-1))
 
@@ -266,6 +306,9 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
 
         sw.summ_flow('2_outputs/offset_bev_e', offset_bev_e, clip=10)
         sw.summ_flow('2_outputs/offset_bev_g', offset_bev_g, clip=10)
+        
+        sw.summ_rgb('2_outputs/depths_gt', torch.cat(depths_vis[0:1].unbind(1), dim=-1))
+        sw.summ_rgb('2_outputs/depths_pred', torch.cat(depths_pred_vis[0:1].unbind(1), dim=-1))
 
     return total_loss, metrics
     
@@ -274,7 +317,7 @@ def main(
         # val/test
         log_freq=10,
         shuffle=False,
-        dset='trainval', # default is trainval
+        dset='trainval', # we will just use val
         batch_size=8,
         nworkers=0,
         # data/log/load directories
@@ -295,13 +338,13 @@ def main(
         do_rgbcompress=True,
         # cuda
         device_ids=[4,5,6,7],
+        seg_classes=['vehicle'],
 ):
     B = batch_size
     assert(B % len(device_ids) == 0) # batch size must be divisible by number of gpus
-    
-    device = 'cuda:%d' % device_ids[0]
-    print(f"Using {device} for evaluation.")
 
+    device = 'cuda:%d' % device_ids[0]
+    
     ## autogen a name
     model_name = "%s" % init_dir.split('/')[-1]
     model_name += "_%d" % B
@@ -316,7 +359,7 @@ def main(
 
     # set up dataloader
     final_dim = (int(224 * res_scale), int(400 * res_scale))
-    print('input RGB resolution:', final_dim)
+    print('resolution:', final_dim)
     
     data_aug_conf = {
         'final_dim': final_dim,
@@ -324,10 +367,9 @@ def main(
                  'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT'],
         'ncams': ncams,
     }
-    # import pdb;pdb.set_trace()
     _, val_dataloader = nuscenesdataset.compile_data(
-        dset, # mini or trainval
-        data_dir, # "/mnt/ssd2/heejun/dataset/nuscenes"
+        dset,
+        data_dir,
         data_aug_conf=data_aug_conf,
         centroid=scene_centroid_py,
         bounds=bounds,
@@ -342,7 +384,8 @@ def main(
         do_shuffle_cams=False,
         get_tids=True,
     )
-    val_iterloader = iter(val_dataloader) # the iter() function will allow the dataloader to be iterable
+
+    val_iterloader = iter(val_dataloader)
 
     vox_util = utils.vox.Vox_util(
         Z, Y, X,
@@ -354,7 +397,9 @@ def main(
 
     # set up model & seg loss
     seg_loss_fn = SimpleLoss(2.13).to(device)
-    model = Segnet(Z, Y, X, vox_util, use_radar=use_radar, use_lidar=use_lidar, use_metaradar=use_metaradar, do_rgbcompress=do_rgbcompress, encoder_type=encoder_type)
+    # model = Segnet(Z, Y, X, vox_util, use_radar=use_radar, use_lidar=use_lidar, use_metaradar=use_metaradar, do_rgbcompress=do_rgbcompress, encoder_type=encoder_type)
+    model = Segnet_multi(Z, Y, X, vox_util, use_radar=use_radar, use_lidar=use_lidar, use_metaradar=use_metaradar, do_rgbcompress=do_rgbcompress, encoder_type=encoder_type, seg_classes=seg_classes)
+    
     model = model.to(device)
     model = torch.nn.DataParallel(model, device_ids=device_ids)
     parameters = list(model.parameters())
@@ -404,6 +449,7 @@ def main(
             
         with torch.no_grad():
             total_loss, metrics = run_model(model, seg_loss_fn, sample, device, sw_ev)
+            # total_loss, metrics = run_model(model, seg_loss_fn, ped_seg_loss_fn, lane_seg_loss_fn, sample,seg_classes,loss_weight, device, sw_v)
 
         intersection += metrics['intersection']
         union += metrics['union']
@@ -441,4 +487,4 @@ def main(
             
 
 if __name__ == '__main__':
-    Fire(main) # Since fire module is used, main() function automatically receives the parameters defined in `eval_rgb.sh` 
+    Fire(main)

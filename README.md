@@ -55,3 +55,10 @@ If you want to evaluate the RGB model, use the code below.
 sh eval_rgb.sh
 ```
 
+The evaluation result is as follows.
+
+|        | RGB         |          | RGB + Radar   |          |
+|--------|-------------|----------|---------------|----------|
+|        | **Mini**    | **Trainval** | **Mini**  | **Trainval** |
+| **mIoU**   | 52.1        | 47.2     | ?             | ?        |
+

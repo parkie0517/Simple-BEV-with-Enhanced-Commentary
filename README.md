@@ -52,5 +52,5 @@ And the saved model will be downloaded in the folder.
 ## Evaluation
 If you want to evaluate the RGB model, use the code below.  
 ```
-sh eval_hj.sh
+sh eval_rgb.sh
 ```

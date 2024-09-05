@@ -33,11 +33,24 @@ Now, run the rest of the code below.
 conda install pip
 pip install -r requirements.txt
 ```
-Now, download the `nuScenes` dataset.  
-The structure of the dataset folder will be updated soon.  
-**STRUCTURE OF THE IMAGE GOES HERE**  
+Now, download the `nuScenes` dataset from this [link](https://www.nuscenes.org/download).  
+After downloading the dataset, make sure that the structure of the dataset folder looks the same as the image below.    
+![alt text](./images_for_readme/dataset_structure.png)  
 
-Download the pre-trained RGB model.  
+Now, download the pre-trained RGB model.  
 ```
 sh get_rgb_model.sh
+```
+If you want to use the RGB + Radar model, use the code below.  
+```
+sh get_rad_model.sh
+```
+After you execute the shell script, `./checkpoints` folder will be automatically created.  
+And the saved model will be downloaded in the folder.  
+
+
+## Evaluation
+If you want to evaluate the RGB model, use the code below.  
+```
+sh eval_hj.sh
 ```

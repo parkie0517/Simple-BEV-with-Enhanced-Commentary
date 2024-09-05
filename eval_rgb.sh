@@ -12,7 +12,7 @@ EXP_NAME="12" # evaluate rgb00 model
 python eval_nuscenes.py \
        --batch_size=4 \
        --exp_name=${EXP_NAME} \
-       --dset='trainval' \
+       --dset='mini' \
        --data_dir=$DATA_DIR \
        --log_dir='logs_eval_nuscenes' \
        --init_dir="checkpoints/${MODEL_NAME}" \

@@ -425,7 +425,7 @@ class Segnet(nn.Module):
             - (B, 16, Z, Y, X) when use_radar = True, use_metaradar = True
             - (B, 1, Z, Y, X) when use_lidar = True
         '''
-        pdb.set_trace()
+        
         B, S, C, H, W = rgb_camXs.shape # (batch, 6, 3, H, W)
         assert(C==3) # assert that there is an error with the channel of the images.
         
@@ -465,21 +465,35 @@ class Segnet(nn.Module):
         sx = Wf/float(W)
         Z, Y, X = self.Z, self.Y, self.X
 
-        # Unproject image feature to 3d grid
-        featpix_T_cams_ = utils.geom.scale_intrinsics(pix_T_cams_, sx, sy) # adjust the intrinsic matrix (divide the focal length and optical center coordinate by the reduction rate)
+        """
+            The resolution of the feature map has decreased because the image passed through a bunch of CNN layers.
+            Therefore, we need to adjust the intrinsic matrix.
+            Intrinsic matrix is composed of Focal length and center coordinate.
+            So, we have to divide those values by the reduction rate.
+        """
+        featpix_T_cams_ = utils.geom.scale_intrinsics(pix_T_cams_, sx, sy) # scale_intrinsics() function performs this complicated job for us.
+
+
+        """
+            Since there are `Bx6` number of feature maps in a batch,
+            we need to expand set of 3D points for each feature map in a batch.
+        """
         if self.xyz_camA is not None:
             xyz_camA = self.xyz_camA.to(feat_camXs_.device).repeat(B*S,1,1) # dimension is expanded: (1, 320000, 3) ----> (Bx6, 320000, 3)
         else:
             xyz_camA = None
 
         """
-        1. Go into vox.py.
-        2. Find unproject_image_to_mem() function
-        3. grid_sample() does the bilinear interpolation
+            Feature Map to 3D Space projection
+            
+                Location of `unproject_image_to_mem()`
+                    ----> utils/vox.py/unproject_image_to_mem()
+
+                grid_sample() does the bilinear interpolation
         """
         feat_mems_ = vox_util.unproject_image_to_mem(
             feat_camXs_,
-            utils.basic.matmul2(featpix_T_cams_, camXs_T_cam0_),
+            utils.basic.matmul2(featpix_T_cams_, camXs_T_cam0_), # combine two transformations (intrinsic @ extrinsic)
             camXs_T_cam0_, Z, Y, X,
             xyz_camA=xyz_camA)
         feat_mems = __u(feat_mems_) # B, S, C, Z, Y, X

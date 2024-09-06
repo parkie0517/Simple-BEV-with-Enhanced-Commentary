@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-
+import pdb
 import utils.geom
 
 class Vox_util(object):
@@ -289,9 +289,16 @@ class Vox_util(object):
         return feat_voxels
 
     def unproject_image_to_mem(self, rgb_camB, pixB_T_camA, camB_T_camA, Z, Y, X, assert_cube=False, xyz_camA=None):
+        """
+            rgb_camB: feature map
+            pixB_T_camA: transformation matrix (intrinsic @ extrinsic)
+            camB_T_camA: extrinsic matrix
+            Z, Y, X: 200, 8, 200
+            xyz_camA: 3D Coordinates of the defined volume (Z, Y, X)
+        """
         # rgb_camB is B x C x H x W
         # pixB_T_camA is B x 4 x 4
-
+        
         # rgb lives in B pixel coords
         # we want everything in A memory coords
 
@@ -303,10 +310,11 @@ class Vox_util(object):
             xyz_memA = utils.basic.gridcloud3d(B, Z, Y, X, norm=False, device=pixB_T_camA.device)
             xyz_camA = self.Mem2Ref(xyz_memA, Z, Y, X, assert_cube=assert_cube)
 
-        xyz_camB = utils.geom.apply_4x4(camB_T_camA, xyz_camA)
+        xyz_camB = utils.geom.apply_4x4(camB_T_camA, xyz_camA) # changes the 3d coordinates according to the corresponding extrinsic
         z = xyz_camB[:,:,2]
-
-        xyz_pixB = utils.geom.apply_4x4(pixB_T_camA, xyz_camA)
+        # pdb.set_trace() # 해당 줄 주석 해제하고 실행해보자! 
+        #####################################요기까지 공부함!
+        xyz_pixB = utils.geom.apply_4x4(pixB_T_camA, xyz_camA) 
         normalizer = torch.unsqueeze(xyz_pixB[:,:,2], 2)
         EPS=1e-6
         # z = xyz_pixB[:,:,2]

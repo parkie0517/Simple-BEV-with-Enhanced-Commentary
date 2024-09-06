@@ -28,6 +28,9 @@ def safe_inverse_single(a):
     return inv
 
 def apply_4x4(RT, xyz):
+    """
+        batch-wise 3D transformation of a large number of points using homogeneous coordinates.
+    """
     B, N, _ = list(xyz.shape)
     ones = torch.ones_like(xyz[:,:,0:1])
     xyz1 = torch.cat([xyz, ones], 2)

@@ -10,6 +10,8 @@ import utils.vox
 import utils.misc
 import utils.basic
 
+import pdb
+
 from torchvision.models.resnet import resnet18
 from efficientnet_pytorch import EfficientNet
 
@@ -56,13 +58,14 @@ class UpsamplingAdd(nn.Module):
         return x + x_skip
 
 class Decoder(nn.Module):
-    """
-    I can bit the shit out of this code too!
-    Let's go!
-    """
     def __init__(self, in_channels, n_classes, predict_future_flow):
         super().__init__()
-        backbone = resnet18(pretrained=False, zero_init_residual=True)
+        """
+            zero_init_residual will initialize the final layer of the BN in the residual block to 0. 
+            during the initial stages of training, this allows the output of the residual block to be close to the input.
+            this will ultimately help stabilize the model training.
+        """
+        backbone = resnet18(pretrained=False, zero_init_residual=True) 
         self.first_conv = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = backbone.bn1
         self.relu = backbone.relu
@@ -301,10 +304,6 @@ class Encoder_eff(nn.Module):
         return x
 
 class Segnet(nn.Module):
-    """
-    Okay, I can do this!
-    I am going to understand this code.
-    """
     def __init__(self, Z, Y, X, vox_util=None, 
                  use_radar=False,
                  use_lidar=False,
@@ -313,9 +312,10 @@ class Segnet(nn.Module):
                  rand_flip=False,
                  latent_dim=128,
                  encoder_type="res101"):
-        super(Segnet, self).__init__()
+        super(Segnet, self).__init__() # this code will invoke the init() of the super class
         assert (encoder_type in ["res101", "res50", "effb0", "effb4"])
 
+        # You need to use `self.` like this so that other functions or classes can access it.
         self.Z, self.Y, self.X = Z, Y, X
         self.use_radar = use_radar
         self.use_lidar = use_lidar
@@ -329,14 +329,14 @@ class Segnet(nn.Module):
         These are the mean and standard deviation for the ImageNet
         These values are important, because they will help match the distribution of nuScenes to the normalized ImagenNet's data distribution
         """
-        self.mean = torch.as_tensor([0.485, 0.456, 0.406]).reshape(1,3,1,1).float().cuda()
+        self.mean = torch.as_tensor([0.485, 0.456, 0.406]).reshape(1,3,1,1).float().cuda() # `.cuda()` is similar to `.to(device)` when device is gpu.
         self.std = torch.as_tensor([0.229, 0.224, 0.225]).reshape(1,3,1,1).float().cuda()
         
         # Encoder
         self.feat2d_dim = feat2d_dim = latent_dim
         """ResNet-101 is the default version"""
         if encoder_type == "res101": 
-            self.encoder = Encoder_res101(feat2d_dim)
+            self.encoder = Encoder_res101(feat2d_dim) # has 37,038,272 number of parameters
         elif encoder_type == "res50":
             self.encoder = Encoder_res50(feat2d_dim)
         elif encoder_type == "effb0":
@@ -367,10 +367,10 @@ class Segnet(nn.Module):
             )
         else: # only RGB
             if self.do_rgbcompress:
-                self.bev_compressor = nn.Sequential(
-                    nn.Conv2d(feat2d_dim*Y, feat2d_dim*1, kernel_size=3, padding=1, stride=1, bias=False), # this conv operation will keep the spatial resolution same. it only reduces the output channel
-                    nn.InstanceNorm2d(latent_dim), # idk
-                    nn.GELU(),  #idk
+                self.bev_compressor = nn.Sequential( # this compressor will have 1,179,648 parameters
+                    nn.Conv2d(feat2d_dim*Y, feat2d_dim*1, kernel_size=3, padding=1, stride=1, bias=False), # this conv operation will keep the spatial resolution same. it only reduces the height to one
+                    nn.InstanceNorm2d(latent_dim), 
+                    nn.GELU(),  
                 )
             else:
                 # use simple sum
@@ -379,25 +379,28 @@ class Segnet(nn.Module):
         # Decoder
         """
         the decoder does the following things
-        1. process multi-modal data using u-net structure 
+        1. process multi-modal data using a u-net structure
         2. multiple heads to create different types of output
         """
-        self.decoder = Decoder(
+        self.decoder = Decoder( # The decoder has 3,830,788
             in_channels=latent_dim,
             n_classes=1,
             predict_future_flow=False
         )
 
         # Weights
-        self.ce_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True)
-        self.center_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True)
-        self.offset_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True)
+        """
+        As mentioned in the paper, there are 3 losses.
+        And it is a multi-task loss composed of 1 main loss and 2 auxilary loss.
+        """
+        self.ce_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True) # main: sem seg loss
+        self.center_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True) # aux: centerness loss
+        self.offset_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True) # aux: offset loss
             
         # set_bn_momentum(self, 0.1)
-
         if vox_util is not None:
-            self.xyz_memA = utils.basic.gridcloud3d(1, Z, Y, X, norm=False)
-            self.xyz_camA = vox_util.Mem2Ref(self.xyz_memA, Z, Y, X, assert_cube=False)
+            self.xyz_memA = utils.basic.gridcloud3d(1, Z, Y, X, norm=False) # ego-car-base 3d space coordinates (100m, 100m, 10m)
+            self.xyz_camA = vox_util.Mem2Ref(self.xyz_memA, Z, Y, X, assert_cube=False) # discretized version into (200, 200, 8)
         else:
             self.xyz_camA = None
         

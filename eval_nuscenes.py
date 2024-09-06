@@ -52,7 +52,7 @@ class SimpleLoss(torch.nn.Module):
             loss.shape = (batch, 1, 200, 200)
             valid.shape = (batch, 1, 200, 200)
         """
-        pdb.set_trace()
+        
         loss = self.loss_fn(ypred, ytgt) # memoreize the order of the input
         loss = utils.basic.reduce_masked_mean(loss, valid)
         """

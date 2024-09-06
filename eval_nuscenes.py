@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tensorboardX import SummaryWriter
 import torch.nn.functional as F
-
+import pdb
 random.seed(125)
 np.random.seed(125)
 
@@ -181,15 +181,15 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     lrtlist_cam0 = utils.geom.apply_4x4_to_lrtlist(cams_T_velo[:,0], lrtlist_velo)
 
     vox_util = utils.vox.Vox_util(
-        Z, Y, X,
-        scene_centroid=scene_centroid.to(device),
+        Z, Y, X, # defined at the beginning of the file
+        scene_centroid=scene_centroid.to(device), # defined at the beginning of the file
         bounds=bounds,
         assert_cube=False)
     
     V = xyz_velo0.shape[1]
 
-    occ_mem0 = vox_util.voxelize_xyz(xyz_cam0, Z, Y, X, assert_cube=False)
-    rad_occ_mem0 = vox_util.voxelize_xyz(rad_xyz_cam0, Z, Y, X, assert_cube=False)
+    occ_mem0 = vox_util.voxelize_xyz(xyz_cam0, Z, Y, X, assert_cube=False) # shape = (b, 1, 200, 8, 200)
+    rad_occ_mem0 = vox_util.voxelize_xyz(rad_xyz_cam0, Z, Y, X, assert_cube=False) # shape = (b, 1, 200, 8, 200)
     metarad_occ_mem0 = vox_util.voxelize_xyz_and_feats(rad_xyz_cam0, meta_rad, Z, Y, X, assert_cube=False)
 
     if not (model.module.use_radar or model.module.use_lidar):
@@ -324,7 +324,7 @@ def main(
                  'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT'],
         'ncams': ncams,
     }
-    # import pdb;pdb.set_trace()
+
     _, val_dataloader = nuscenesdataset.compile_data(
         dset, # mini or trainval
         data_dir, # "/mnt/ssd2/heejun/dataset/nuscenes"

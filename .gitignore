@@ -2,3 +2,4 @@
 __pycache__
 checkpoints
 logs_eval_nuscenes
+simplebev.code-workspace

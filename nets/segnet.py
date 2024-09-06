@@ -303,7 +303,7 @@ class Encoder_eff(nn.Module):
 class Segnet(nn.Module):
     """
     Okay, I can do this!
-    I am going to understand this fucking code.
+    I am going to understand this code.
     """
     def __init__(self, Z, Y, X, vox_util=None, 
                  use_radar=False,

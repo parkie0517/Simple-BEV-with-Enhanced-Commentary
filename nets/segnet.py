@@ -391,7 +391,9 @@ class Segnet(nn.Module):
         # Weights
         """
         As mentioned in the paper, there are 3 losses.
-        And it is a multi-task loss composed of 1 main loss and 2 auxilary loss.
+        SegNet uses a multi-task loss which is composed of the following 3 losses
+            - 1 main loss
+            - 2 auxilary losses
         """
         self.ce_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True) # main: sem seg loss
         self.center_weight = nn.Parameter(torch.tensor(0.0), requires_grad=True) # aux: centerness loss
@@ -407,9 +409,15 @@ class Segnet(nn.Module):
     def forward(self, rgb_camXs, pix_T_cams, cam0_T_camXs, vox_util, rad_occ_mem0=None):
         '''
         B = batch size, S = number of cameras, C = 3, H = img height, W = img width
-        rgb_camXs: (B,S,C,H,W)
-        pix_T_cams: (B,S,4,4)
-        cam0_T_camXs: (B,S,4,4)
+        rgb_camXs
+            - input RGB images
+            - shape: (B,S,C,H,W)
+        pix_T_cams
+            - camera intrinsic matrix
+            - shape: (B,S,4,4)
+        cam0_T_camXs
+            - extrinsic matrix (rotation, translatoin)
+            - shape: (B,S,4,4)
         vox_util: vox util object
         rad_occ_mem0:
             - None when use_radar = False, use_lidar = False
@@ -417,24 +425,38 @@ class Segnet(nn.Module):
             - (B, 16, Z, Y, X) when use_radar = True, use_metaradar = True
             - (B, 1, Z, Y, X) when use_lidar = True
         '''
-        B, S, C, H, W = rgb_camXs.shape
+        pdb.set_trace()
+        B, S, C, H, W = rgb_camXs.shape # (batch, 6, 3, H, W)
         assert(C==3) # assert that there is an error with the channel of the images.
-        # reshape tensors
+        
+        """
+            Reshaping Tensors
+                Q: What is happening here?
+                A: Combine the batch and camera dimensions.
+                Purpose: for efficient batch processing.
+            
+            lambda functions are used for reshaping the tensors
+        """
+        
         __p = lambda x: utils.basic.pack_seqdim(x, B)
         __u = lambda x: utils.basic.unpack_seqdim(x, B)
-        rgb_camXs_ = __p(rgb_camXs)
-        pix_T_cams_ = __p(pix_T_cams)
-        cam0_T_camXs_ = __p(cam0_T_camXs)
-        camXs_T_cam0_ = utils.geom.safe_inverse(cam0_T_camXs_)
+        rgb_camXs_ = __p(rgb_camXs) # (B, 6, 3, H, W) ----> (Bx6, 3, H, W)
+        pix_T_cams_ = __p(pix_T_cams) # (B, 6, 4, 4) ----> (BX6, 4, 4)
+        cam0_T_camXs_ = __p(cam0_T_camXs) # (B, 6, 4, 4) ----> (BX6, 4, 4)
+        camXs_T_cam0_ = utils.geom.safe_inverse(cam0_T_camXs_) # computes the inverse of a matrix in a numerically stable manner. camXs_T_cam0_ still has the same shape
 
-        # rgb encoder
+        """
+            RGB Encoder
+                - Input shape:  (Bx6, 3, H, W)
+                - Output shape: (Bx6, latent_dim, Hf, Wf)
+        """
         device = rgb_camXs_.device
-        rgb_camXs_ = (rgb_camXs_ + 0.5 - self.mean.to(device)) / self.std.to(device) # normaliza the input data
+        rgb_camXs_ = (rgb_camXs_ + 0.5 - self.mean.to(device)) / self.std.to(device) # normalize the input data
         if self.rand_flip:
             B0, _, _, _ = rgb_camXs_.shape
             self.rgb_flip_index = np.random.choice([0,1], B0).astype(bool)
             rgb_camXs_[self.rgb_flip_index] = torch.flip(rgb_camXs_[self.rgb_flip_index], [-1])
-        feat_camXs_ = self.encoder(rgb_camXs_)
+        feat_camXs_ = self.encoder(rgb_camXs_) # feat_camXs.shape = (Bx6, latent_dim, Hf, Wf)
         if self.rand_flip:
             feat_camXs_[self.rgb_flip_index] = torch.flip(feat_camXs_[self.rgb_flip_index], [-1])
         _, C, Hf, Wf = feat_camXs_.shape
@@ -443,10 +465,10 @@ class Segnet(nn.Module):
         sx = Wf/float(W)
         Z, Y, X = self.Z, self.Y, self.X
 
-        # unproject image feature to 3d grid
-        featpix_T_cams_ = utils.geom.scale_intrinsics(pix_T_cams_, sx, sy)
+        # Unproject image feature to 3d grid
+        featpix_T_cams_ = utils.geom.scale_intrinsics(pix_T_cams_, sx, sy) # adjust the intrinsic matrix (divide the focal length and optical center coordinate by the reduction rate)
         if self.xyz_camA is not None:
-            xyz_camA = self.xyz_camA.to(feat_camXs_.device).repeat(B*S,1,1)
+            xyz_camA = self.xyz_camA.to(feat_camXs_.device).repeat(B*S,1,1) # dimension is expanded: (1, 320000, 3) ----> (Bx6, 320000, 3)
         else:
             xyz_camA = None
 
@@ -461,7 +483,7 @@ class Segnet(nn.Module):
             camXs_T_cam0_, Z, Y, X,
             xyz_camA=xyz_camA)
         feat_mems = __u(feat_mems_) # B, S, C, Z, Y, X
-
+        
         
         mask_mems = (torch.abs(feat_mems) > 0).float() # create valid volume mask
 

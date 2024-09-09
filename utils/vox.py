@@ -291,19 +291,14 @@ class Vox_util(object):
     def unproject_image_to_mem(self, rgb_camB, pixB_T_camA, camB_T_camA, Z, Y, X, assert_cube=False, xyz_camA=None):
         """
             rgb_camB: feature map
+                shape:  (B*6 x C x H x W)
             pixB_T_camA: transformation matrix (intrinsic @ extrinsic)
             camB_T_camA: extrinsic matrix
             Z, Y, X: 200, 8, 200
             xyz_camA: 3D Coordinates of the defined volume (Z, Y, X)
+                shape: (B*6, 320000, 3)
         """
-        # rgb_camB is B x C x H x W
-        # pixB_T_camA is B x 4 x 4
         
-        # rgb lives in B pixel coords
-        # we want everything in A memory coords
-
-        # this puts each C-dim pixel in the rgb_camB
-        # along a ray in the voxelgrid
         B, C, H, W = list(rgb_camB.shape)
 
         if xyz_camA is None:

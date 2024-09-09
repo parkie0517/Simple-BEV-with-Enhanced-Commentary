@@ -304,6 +304,9 @@ class Encoder_eff(nn.Module):
         return x
 
 class Segnet(nn.Module):
+    """
+        Actual implementation of the Simple-BEV class
+    """
     def __init__(self, Z, Y, X, vox_util=None, 
                  use_radar=False,
                  use_lidar=False,
@@ -388,7 +391,7 @@ class Segnet(nn.Module):
             predict_future_flow=False
         )
 
-        # Weights
+        # Loss
         """
         As mentioned in the paper, there are 3 losses.
         SegNet uses a multi-task loss which is composed of the following 3 losses
@@ -491,6 +494,7 @@ class Segnet(nn.Module):
 
                 grid_sample() does the bilinear interpolation
         """
+        pdb.set_trace()
         feat_mems_ = vox_util.unproject_image_to_mem(
             feat_camXs_,
             utils.basic.matmul2(featpix_T_cams_, camXs_T_cam0_), # combine two transformations (intrinsic @ extrinsic)

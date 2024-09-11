@@ -63,13 +63,17 @@ class SimpleLoss(torch.nn.Module):
         return loss
 
 def balanced_mse_loss(pred, gt, valid=None):
-    pos_mask = gt.gt(0.5).float()
-    neg_mask = gt.lt(0.5).float()
+    """
+        Centerness Loss
+    """
+    pos_mask = gt.gt(0.5).float() # gt = greater than 0.5
+    neg_mask = gt.lt(0.5).float() # lt = less than 0.5
     if valid is None:
         valid = torch.ones_like(pos_mask)
-    mse_loss = F.mse_loss(pred, gt, reduction='none')
-    pos_loss = utils.basic.reduce_masked_mean(mse_loss, pos_mask*valid)
-    neg_loss = utils.basic.reduce_masked_mean(mse_loss, neg_mask*valid)
+
+    mse_loss = F.mse_loss(pred, gt, reduction='none') # mean squared error loss
+    pos_loss = utils.basic.reduce_masked_mean(mse_loss, pos_mask*valid) # element-wise product
+    neg_loss = utils.basic.reduce_masked_mean(mse_loss, neg_mask*valid) # element-wise product
     loss = (pos_loss + neg_loss)*0.5
     return loss
 
@@ -221,18 +225,31 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
 
     lrtlist_cam0_g = lrtlist_cam0
 
+
+    """
+        The actual part where the data is input to the NN
+    """
     _, feat_bev_e, seg_bev_e, center_bev_e, offset_bev_e = model(
             rgb_camXs=rgb_camXs,
             pix_T_cams=pix_T_cams,
             cam0_T_camXs=cam0_T_camXs,
             vox_util=vox_util,
             rad_occ_mem0=in_occ_mem0)
-
-    ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g)
+    
+    """
+        Compute Loss
+            1. Cross Entropy Loss
+            2. Center Loss
+            3. Offset Loss
+    """
+    ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g) # prediction, GT, valid mask
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)
-    offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True)
+    offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True) # (B, 2, 200, 200) ----> (B, 1, 200, 200)
     offset_loss = utils.basic.reduce_masked_mean(offset_loss, seg_bev_g*valid_bev_g)
 
+    """
+        model.module.*_weight are all parameters
+    """
     ce_factor = 1 / torch.exp(model.module.ce_weight)
     ce_loss = 10.0 * ce_loss * ce_factor
     ce_uncertainty_loss = 0.5 * model.module.ce_weight

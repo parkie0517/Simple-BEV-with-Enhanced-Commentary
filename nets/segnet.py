@@ -48,7 +48,7 @@ class UpsamplingAdd(nn.Module):
     def __init__(self, in_channels, out_channels, scale_factor=2):
         super().__init__()
         self.upsample_layer = nn.Sequential(
-            nn.Upsample(scale_factor=scale_factor, mode='bilinear', align_corners=False),
+            nn.Upsample(scale_factor=scale_factor, mode='bilinear', align_corners=False), # performs bilinear interpolation to upsample the feature map
             nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0, bias=False),
             nn.InstanceNorm2d(out_channels),
         )
@@ -61,6 +61,10 @@ class Decoder(nn.Module):
     def __init__(self, in_channels, n_classes, predict_future_flow):
         super().__init__()
         """
+            Decoder uses an U-Net alike architecture
+        """
+
+        """
             zero_init_residual will initialize the final layer of the BN in the residual block to 0. 
             during the initial stages of training, this allows the output of the residual block to be close to the input.
             this will ultimately help stabilize the model training.
@@ -70,7 +74,7 @@ class Decoder(nn.Module):
         self.bn1 = backbone.bn1
         self.relu = backbone.relu
 
-        self.layer1 = backbone.layer1
+        self.layer1 = backbone.layer1 # does not effect the shape of the output tensor
         self.layer2 = backbone.layer2
         self.layer3 = backbone.layer3
         self.predict_future_flow = predict_future_flow
@@ -115,7 +119,8 @@ class Decoder(nn.Module):
             )
 
     def forward(self, x, bev_flip_indices=None):
-        b, c, h, w = x.shape
+        
+        b, c, h, w = x.shape # (B, 128, 200, 200)
 
         # (H, W)
         skip_x = {'1': x}
@@ -124,15 +129,19 @@ class Decoder(nn.Module):
         x = self.relu(x)
 
         # (H/4, W/4)
-        x = self.layer1(x)
+        x = self.layer1(x) # keeps the shape same
         skip_x['2'] = x
-        x = self.layer2(x)
+        x = self.layer2(x) # (B, 64, 100, 100) ----> (B, 128, 50, 50)
         skip_x['3'] = x
 
         # (H/8, W/8)
         x = self.layer3(x)
 
         # First upsample to (H/4, W/4)
+        """
+            1. Upsamples x
+            2. Adds skip_x['3']
+        """
         x = self.up3_skip(x, skip_x['3'])
 
         # Second upsample to (H/2, W/2)
@@ -149,11 +158,17 @@ class Decoder(nn.Module):
 
         """x is passed on to different types of heads"""
         feat_output = self.feat_head(x)
-        segmentation_output = self.segmentation_head(x)
-        instance_center_output = self.instance_center_head(x)
-        instance_offset_output = self.instance_offset_head(x)
+        segmentation_output = self.segmentation_head(x) # CNN-based segmentatoin head
+        instance_center_output = self.instance_center_head(x) # (B, 1, 200, 200)
+        instance_offset_output = self.instance_offset_head(x) # (B, 2, 200, 200)
         instance_future_output = self.instance_future_head(x) if self.predict_future_flow else None
 
+
+        """
+            Return data using a dictionary type
+                - view(): this function is used to reshape tensors
+                - *: unpacking operator
+        """
         return {
             'raw_feat': x,
             'feat': feat_output.view(b, *feat_output.shape[1:]),
@@ -509,7 +524,6 @@ class Segnet(nn.Module):
                 True  ----> 1.0
         """
         mask_mems = (torch.abs(feat_mems) > 0).float() # create valid volume mask
-        pdb.set_trace()
 
         """By executing the code below, the 6 3D features are finally combined into one 3D feature"""
         feat_mem = utils.basic.reduce_masked_mean(feat_mems, mask_mems, dim=1) # Output shape: (B, C, 200, 8, 200)
@@ -524,9 +538,9 @@ class Segnet(nn.Module):
                 rad_occ_mem0[self.bev_flip1_index] = torch.flip(rad_occ_mem0[self.bev_flip1_index], [-1])
                 rad_occ_mem0[self.bev_flip2_index] = torch.flip(rad_occ_mem0[self.bev_flip2_index], [-3])
 
-        # bev compressing
         """
-        At the end feat_bev will be created which represents the combined bev feature
+            BEV Compressing
+            At the end feat_bev will be created which represents the combined bev feature
         """
         if self.use_radar:
             assert(rad_occ_mem0 is not None)
@@ -547,20 +561,21 @@ class Segnet(nn.Module):
             feat_bev_ = torch.cat([feat_bev_, rad_bev_], dim=1)
             feat_bev = self.bev_compressor(feat_bev_)
         else: # RGB only
-            """
-            let's first look at the RGB only code
-            """
             if self.do_rgbcompress:
                 """
-                1. permute() manipulates the dimensions
-                2. reshape reshapes the tensor
+                    1. permute() manipulates the dimensions
+                        (B, 128, 200, 8, 200) ----> (B, 128, 8, 200, 200)
+                    2. reshape reshapes the tensor
+                        (B, 128, 8, 200, 200) ----> (B, 1024, 200, 200)
                 """
                 feat_bev_ = feat_mem.permute(0, 1, 3, 2, 4).reshape(B, self.feat2d_dim*Y, Z, X) 
-                feat_bev = self.bev_compressor(feat_bev_)
+                feat_bev = self.bev_compressor(feat_bev_) # CNN-base BEV Compressor
             else:
                 feat_bev = torch.sum(feat_mem, dim=3) # the simplest method
 
-        # bev decoder
+        """
+            Decoder: returns a dictionary typed output
+        """
         out_dict = self.decoder(feat_bev, (self.bev_flip1_index, self.bev_flip2_index) if self.rand_flip else None)
 
         raw_e = out_dict['raw_feat']
@@ -570,4 +585,3 @@ class Segnet(nn.Module):
         offset_e = out_dict['instance_offset']
 
         return raw_e, feat_e, seg_e, center_e, offset_e
-

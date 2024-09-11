@@ -23,7 +23,7 @@ RT = np.array([
 ])
 
 # Translation vector (1, 1, 0)
-T = np.array([1, 1, 0])
+T = np.array([1, 3, -1])
 
 # Construct the 4x4 extrinsic matrix
 extrinsic_matrix = np.eye(4)  # Initialize as 4x4 identity matrix
@@ -36,9 +36,9 @@ extrinsic_matrix = extrinsic_matrix.reshape(1, 4, 4)
 
 
 xyz = np.array([
-    [0, 0, 0],  # Point 1
-    [1, 0, 0],  # Point 2
-    [1, 1, 1]   # Point 3
+    [3, 4, 5],  # Point 1
+    [1, 4, 1],  # Point 2
+    [1, 2, 1]   # Point 3
 ])
 
 xyz = xyz.reshape(1, 3, 3)
@@ -48,5 +48,5 @@ extrinsic_matrix = torch.from_numpy(extrinsic_matrix).float()
 
 
 xyz_2 = apply_4x4(extrinsic_matrix, xyz) # changes the 3d coordinates according to the corresponding extrinsic
-
+print(extrinsic_matrix)
 print(xyz_2)

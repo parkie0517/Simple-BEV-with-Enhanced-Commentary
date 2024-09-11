@@ -56,22 +56,31 @@ def normalize(d):
     return out
 
 def reduce_masked_mean(x, mask, dim=None, keepdim=False):
-    # x and mask are the same shape, or at least broadcastably so < actually it's safer if you disallow broadcasting
-    # returns shape-1
-    # axis can be a list of axes
+    """
+        Combines the 6 3D Feature Volmes into 1 3D Feature Volume
+            x: 6 3D Feature
+            mask: valid mask
+    """
+
+    # Check if `x` and `mask`'s shape are the same
     for (a,b) in zip(x.size(), mask.size()):
-        # if not b==1:
         assert(a==b) # some shape mismatch!
-    # assert(x.size() == mask.size())
-    prod = x*mask
+    
+    # Zeros out the values in x where the corresponding value is 0.0 in `mask`
+    prod = x*mask # performs element-wise product
+
     if dim is None:
         numer = torch.sum(prod)
         denom = EPS+torch.sum(mask)
     else:
+        """
+            dim specifies that the sum should be computed along the 1 dimension.
+            shape: (4, 6, 128, 200, 8, 200) ----> (4, 128, 200, 8, 200)
+        """
         numer = torch.sum(prod, dim=dim, keepdim=keepdim)
         denom = EPS+torch.sum(mask, dim=dim, keepdim=keepdim)
 
-    mean = numer/denom
+    mean = numer/denom # mean's shape: (4, 128, 200, 8, 200)
     return mean
 
 def meshgrid2d(B, Y, X, stack=False, norm=False, device='cuda'):

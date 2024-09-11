@@ -290,30 +290,32 @@ class Vox_util(object):
 
     def unproject_image_to_mem(self, rgb_camB, pixB_T_camA, camB_T_camA, Z, Y, X, assert_cube=False, xyz_camA=None):
         """
-            rgb_camB: feature map
+            - rgb_camB: feature map
                 shape:  (B*6 x C x H x W)
-            pixB_T_camA: transformation matrix (intrinsic @ extrinsic)
-            camB_T_camA: extrinsic matrix
-            Z, Y, X: 200, 8, 200
-            xyz_camA: 3D Coordinates of the defined volume (Z, Y, X)
+            - pixB_T_camA: transformation matrix (intrinsic @ extrinsic)
+            - camB_T_camA: extrinsic matrix
+                How extrinsic matrix works.
+                    1. Rotate
+                    2. Translate
+            - Z, Y, X: 200, 8, 200
+            - xyz_camA: 3D Coordinates of the defined volume (Z, Y, X)
                 shape: (B*6, 320000, 3)
         """
-        
+
         B, C, H, W = list(rgb_camB.shape)
 
         if xyz_camA is None:
             xyz_memA = utils.basic.gridcloud3d(B, Z, Y, X, norm=False, device=pixB_T_camA.device)
             xyz_camA = self.Mem2Ref(xyz_memA, Z, Y, X, assert_cube=assert_cube)
 
-        xyz_camB = utils.geom.apply_4x4(camB_T_camA, xyz_camA) # changes the 3d coordinates according to the corresponding extrinsic
-        z = xyz_camB[:,:,2]
-        # pdb.set_trace() # 해당 줄 주석 해제하고 실행해보자! 
-        #####################################요기까지 공부함!
-        xyz_pixB = utils.geom.apply_4x4(pixB_T_camA, xyz_camA) 
-        normalizer = torch.unsqueeze(xyz_pixB[:,:,2], 2)
+        xyz_camB = utils.geom.apply_4x4(camB_T_camA, xyz_camA) # changes the 3d coordinates of each batch according to the corresponding extrinsic matrix
+        z = xyz_camB[:,:,2] # z is NOT the height, z is the depth from camera B
+
+        xyz_pixB = utils.geom.apply_4x4(pixB_T_camA, xyz_camA) # Converts the 3D coords to 2D pixel coords.
+        normalizer = torch.unsqueeze(xyz_pixB[:,:,2], 2) # Chagnes shape: (B, 320000) -> (B, 320000, 1)
         EPS=1e-6
         # z = xyz_pixB[:,:,2]
-        xy_pixB = xyz_pixB[:,:,:2]/torch.clamp(normalizer, min=EPS)
+        xy_pixB = xyz_pixB[:,:,:2]/torch.clamp(normalizer, min=EPS) # if the value is smaller than min, then the value is substibuted to min
         # this is B x N x 2
         # this is the (floating point) pixel coordinate of each voxel
         x, y = xy_pixB[:,:,0], xy_pixB[:,:,1]
@@ -335,9 +337,9 @@ class Vox_util(object):
             # since we want a 3d output, we need 5d tensors
             z_pixB = torch.zeros_like(x)
             xyz_pixB = torch.stack([x_pixB, y_pixB, z_pixB], axis=2)
-            rgb_camB = rgb_camB.unsqueeze(2)
-            xyz_pixB = torch.reshape(xyz_pixB, [B, Z, Y, X, 3])
-            values = F.grid_sample(rgb_camB, xyz_pixB, align_corners=False)
+            rgb_camB = rgb_camB.unsqueeze(2) # (24, 128, 56, 100) ----> (24, 128, 1, 56, 100)
+            xyz_pixB = torch.reshape(xyz_pixB, [B, Z, Y, X, 3]) # (24, 320000, 3) ----> (24, 200, 8, 200, 3)
+            values = F.grid_sample(rgb_camB, xyz_pixB, align_corners=False) # bilinear interpolation
 
         values = torch.reshape(values, (B, C, Z, Y, X))
         values = values * valid_mem

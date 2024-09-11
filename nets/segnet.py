@@ -494,19 +494,25 @@ class Segnet(nn.Module):
 
                 grid_sample() does the bilinear interpolation
         """
-        pdb.set_trace()
         feat_mems_ = vox_util.unproject_image_to_mem(
             feat_camXs_,
             utils.basic.matmul2(featpix_T_cams_, camXs_T_cam0_), # combine two transformations (intrinsic @ extrinsic)
             camXs_T_cam0_, Z, Y, X,
             xyz_camA=xyz_camA)
-        feat_mems = __u(feat_mems_) # B, S, C, Z, Y, X
+        feat_mems = __u(feat_mems_) # (24, 128, 200, 8, 200) ----> (4, 6, 128, 200, 8, 200) : (B, S, C, Z, Y, X)
         
-        
+        """
+            1. absolute value
+            2. check if bigger than 0
+            3. Convert to float
+                False ----> 0.0
+                True  ----> 1.0
+        """
         mask_mems = (torch.abs(feat_mems) > 0).float() # create valid volume mask
+        pdb.set_trace()
 
         """By executing the code below, the 6 3D features are finally combined into one 3D feature"""
-        feat_mem = utils.basic.reduce_masked_mean(feat_mems, mask_mems, dim=1) # B, C, Z, Y, X
+        feat_mem = utils.basic.reduce_masked_mean(feat_mems, mask_mems, dim=1) # Output shape: (B, C, 200, 8, 200)
 
         if self.rand_flip:
             self.bev_flip1_index = np.random.choice([0,1], B).astype(bool)

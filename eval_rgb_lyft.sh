@@ -1,6 +1,5 @@
 #!/bin/bash
-# original file is called `eval.sh`
-# this file was modified by me
+# this file is created by me
 
 DATA_DIR="/mnt/ssd2/heejun/dataset/nuscenes"
 # there should be ${DATA_DIR}/full_v1.0/

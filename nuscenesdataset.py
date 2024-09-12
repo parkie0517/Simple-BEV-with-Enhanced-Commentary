@@ -146,7 +146,6 @@ def get_radar_data(nusc, sample_rec, nsweeps, min_distance, use_radar_filters, d
     Returned tensor is 5(x, y, z, reflectance, dt, ring_index) x N
     Adapted from https://github.com/nutonomy/nuscenes-devkit/blob/master/python-sdk/nuscenes/utils/data_classes.py#L56
     """
-    # import ipdb; ipdb.set_trace()
     
     # points = np.zeros((5, 0))
     points = np.zeros((19, 0)) # 18 plus one for time

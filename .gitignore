@@ -2,5 +2,6 @@
 __pycache__
 checkpoints
 logs_eval_nuscenes
+logs_eval_lyft
 simplebev.code-workspace
 eval_nuscenes_jhk.py

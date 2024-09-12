@@ -16,9 +16,16 @@ EXP_NAME="eval"
 python eval_lyft.py \
        --exp_name=${EXP_NAME} \
        --batch_size=2 \
-       --dset='test' \
+       --dset='lyft' \
        --data_dir=$DATA_DIR \
        --log_dir='logs_eval_lyft' \
        --init_dir="checkpoints/${MODEL_NAME}" \
        --res_scale=2 \
-       --device_ids=[0,1]
+       --device_ids=[3]
+
+:<<"End"
+
+Explanation of the flags
+       dset: make sure is `lyft`
+
+End

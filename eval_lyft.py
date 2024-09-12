@@ -271,7 +271,6 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     
 def main(
         exp_name='eval',
-        # val/test
         log_freq=100,
         shuffle=False,
         dset='trainval', # we will just use val

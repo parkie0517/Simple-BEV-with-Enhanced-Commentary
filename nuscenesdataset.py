@@ -752,12 +752,16 @@ class NuscData(torch.utils.data.Dataset):
         return resize_dims, crop
 
     def get_image_data(self, rec, cams):
+        """
+            rec: dictionary data that contains tokens of data
+            cams: ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
+        """
         imgs = []
         rots = []
         trans = []
         intrins = []
         for cam in cams:
-            samp = self.nusc.get('sample_data', rec['data'][cam])
+            samp = self.nusc.get('sample_data', rec['data'][cam]) # This is how you get the current image information
 
             imgname = os.path.join(self.dataroot, samp['filename'])
             img = Image.open(imgname)
@@ -773,7 +777,7 @@ class NuscData(torch.utils.data.Dataset):
             sx = resize_dims[0]/float(W)
             sy = resize_dims[1]/float(H)
 
-            intrin = utils.geom.scale_intrinsics(intrin.unsqueeze(0), sx, sy).squeeze(0)
+            intrin = utils.geom.scale_intrinsics(intrin.unsqueeze(0), sx, sy).squeeze(0) # create a 4x4 matrix
 
             fx, fy, x0, y0 = utils.geom.split_intrinsics(intrin.unsqueeze(0))
 
@@ -791,7 +795,7 @@ class NuscData(torch.utils.data.Dataset):
             trans.append(tran)
 
             
-        return (torch.stack(imgs), torch.stack(rots), torch.stack(trans),torch.stack(intrins))
+        return (torch.stack(imgs), torch.stack(rots), torch.stack(trans),torch.stack(intrins)) # stack along a new dimension
 
 
     def get_lidar_data(self, rec, nsweeps):
@@ -953,8 +957,8 @@ class NuscData(torch.utils.data.Dataset):
                 vislist.append(torch.tensor(1.0)) # visible
                 
             box = Box(inst['translation'], inst['size'], Quaternion(inst['rotation']))
-            box.translate(trans)
-            box.rotate(rot)
+            box.translate(trans) # translate the bbox according to the ego position 
+            box.rotate(rot) # rotate the bbox according to to the ego rotation
 
             tidlist.append(inst['instance_token'])
 
@@ -1052,9 +1056,9 @@ class VizData(NuscData):
         intrins[refcam_id] = intrin_0
         
 
-        # There is a problem here
+        # There with the code below, when running without the radar data
         #radar_data = self.get_radar_data(rec, nsweeps=self.nsweeps)
-        # Modification
+        # Modification (I just created a tensor filled with zeros)
         radar_data = radar_data = np.zeros((700 * self.nsweeps, 3))
 
         lidar_extra = lidar_data[3:]
@@ -1063,7 +1067,6 @@ class VizData(NuscData):
         lrtlist_, boxlist_, vislist_, tidlist_ = self.get_lrtlist(rec)
         N_ = lrtlist_.shape[0]
 
-        # import ipdb; ipdb.set_trace()
         if N_ > 0:
             
             velo_T_cam = utils.geom.merge_rt(rots, trans)
@@ -1150,8 +1153,7 @@ class VizData(NuscData):
             return imgs, rots, trans, intrins, lidar0_data, lidar0_extra, lidar_data, lidar_extra, lrtlist, vislist, scorelist, seg_bev, valid_bev, center_bev, offset_bev, size_bev, ry_bev, ycoord_bev, radar_data, egopose
     
     def __getitem__(self, index):
-
-        cams = self.choose_cams()
+        cams = self.choose_cams() # ['CAM_FRONT_LEFT', 'CAM_FRONT', 'CAM_FRONT_RIGHT', 'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT']
         
         if self.is_train and self.do_shuffle_cams:
             # randomly sample the ref cam

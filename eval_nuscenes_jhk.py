@@ -120,8 +120,7 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
 
     B0,T,S,C,H,W = imgs.shape
     assert(T==1)
-    
-    
+
     # eliminate the time dimension
     imgs = imgs[:,0]
     rots = rots[:,0]

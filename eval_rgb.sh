@@ -10,7 +10,7 @@ MODEL_NAME="8x5_5e-4_rgb12_22:43:46"
 EXP_NAME="12" # evaluate rgb00 model
 
 python eval_nuscenes.py \
-       --batch_size=1 \
+       --batch_size=2 \
        --exp_name=${EXP_NAME} \
        --dset='mini' \
        --data_dir=$DATA_DIR \

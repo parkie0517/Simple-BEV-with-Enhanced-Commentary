@@ -2,7 +2,7 @@
 # original file is `eval_lyft.sh`
 # this file is modified by me
 
-DATA_DIR="mnt/ssd2/heejun/dataset/lyft"
+DATA_DIR="/mnt/ssd2/heejun/dataset/lyft"
 
 MODEL_NAME="16x3_5e-4s_rgb06_01:34:39"
 

@@ -37,6 +37,8 @@ Now, download the `nuScenes` dataset from this [link](https://www.nuscenes.org/d
 After downloading the dataset, make sure that the structure of the dataset folder looks the same as the image below.    
 ![alt text](./images_for_readme/dataset_structure.png)  
 
+If you want to download the `Lyft` dataset. then go [here](https://www.kaggle.com/competitions/3d-object-detection-for-autonomous-vehicles/data).  
+
 Now, download the pre-trained RGB model.  
 ```
 sh get_rgb_model.sh

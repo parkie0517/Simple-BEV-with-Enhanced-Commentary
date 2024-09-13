@@ -9,7 +9,8 @@ import utils.misc
 import utils.improc
 import utils.vox
 import random
-import nuscenesdataset
+# import nuscenesdataset
+import lyftdataset # This file is created by Heejun Park
 import torch
 torch.multiprocessing.set_sharing_strategy('file_system')
 import torch.nn as nn
@@ -273,9 +274,9 @@ def main(
         exp_name='eval',
         log_freq=100,
         shuffle=False,
-        dset='trainval', # we will just use val
+        dset='lyft', # if you want to use the `lyft` dataset, make sure this is `lyft`!
         batch_size=8,
-        nworkers=12,
+        nworkers=0,
         # data/log/load directories
         data_dir='../nuscenes/',
         log_dir='logs_eval_nuscenes_bevseg',
@@ -323,7 +324,7 @@ def main(
                  'CAM_BACK_LEFT', 'CAM_BACK', 'CAM_BACK_RIGHT'],
         'ncams': ncams,
     }
-    _, val_dataloader = nuscenesdataset.compile_data(
+    _, val_dataloader = lyftdataset.compile_data(
         dset,
         data_dir,
         data_aug_conf=data_aug_conf,

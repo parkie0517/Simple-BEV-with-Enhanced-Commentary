@@ -38,6 +38,12 @@ After downloading the dataset, make sure that the structure of the dataset folde
 ![alt text](./images_for_readme/dataset_structure.png)  
 
 If you want to download the `Lyft` dataset. then go [here](https://www.kaggle.com/competitions/3d-object-detection-for-autonomous-vehicles/data).  
+After downloading the dataset, the dataset structure should look like this.  
+![alt text](./images_for_readme/lyft_dataset_structure.png)  
+In order to create the `./maps` directory, I used the command below.  
+```
+ln -s /mnt/ssd_jhk/lyft_5/test_maps/ /mnt/ssd_jhk/lyft_5/maps
+```
 
 Now, download the pre-trained RGB model.  
 ```

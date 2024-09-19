@@ -1258,14 +1258,14 @@ def compile_data(version, dataroot, data_aug_conf, centroid, bounds, res_3d, bsz
                  nworkers, shuffle=True, nsweeps=1, nworkers_val=1, seqlen=1, refcam_id=1, get_tids=False,
                  temporal_aug=False, use_radar_filters=False, do_shuffle_cams=True):
     
-
+    
     print('loading lyft...')
     # There is a problem with this code. So I just commented this one.
     # dataroot = os.path.join(dataroot, 'trainval')
     nusc = LyftDataset(data_path=dataroot,
-                        json_path=os.path.join(dataroot, 'test_data'),
+                        json_path=os.path.join(dataroot, 'train_data'), # replace `train_data` with `test_data` if you want to use the test dataset
                         verbose=True)
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     print('making parser...')
     traindata = VizData(
         nusc,

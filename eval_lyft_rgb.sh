@@ -22,8 +22,6 @@ EXP_NAME="eval"
 End1
 
 
-EXP_NAME="eval"
-
 python eval_lyft.py \
        --exp_name=${EXP_NAME} \
        --batch_size=1 \

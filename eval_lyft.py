@@ -114,9 +114,16 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             loss_fn: loss function
             d: data sample
     """
+
+    
     metrics = {}
-    import pdb; pdb.set_trace()
-    total_loss = torch.tensor(0.0, requires_grad=True).to(device) # create a variable to store the total loss. this variable needs to ne a tensor type.
+    
+    """
+        Loss variable
+            create a variable to store the total loss
+            this variable needs to ne a tensor type.
+    """
+    total_loss = torch.tensor(0.0, requires_grad=True).to(device) 
 
     imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, radar_data, egopose = d
 
@@ -274,7 +281,7 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
 
         sw.summ_flow('2_outputs/offset_bev_e', offset_bev_e, clip=10)
         sw.summ_flow('2_outputs/offset_bev_g', offset_bev_g, clip=10)
-    pdb.set_trace()
+
     return total_loss, metrics
     
 def main(

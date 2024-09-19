@@ -274,16 +274,16 @@ def main(
         exp_name='eval',
         log_freq=100,
         shuffle=False,
-        dset='lyft', # if you want to use the `lyft` dataset, make sure this is `lyft`!
+        dset='lyft', # if you want to use the `lyft` dataset, make sure this is set to `lyft`
         batch_size=8,
         nworkers=0,
         # data/log/load directories
-        data_dir='../nuscenes/',
-        log_dir='logs_eval_nuscenes_bevseg',
+        data_dir='../dataset/lyft/',
+        log_dir='logs_eval_lyft',
         init_dir='checkpoints/rgb_model',
         ignore_load=None,
         # data
-        res_scale=2,
+        res_scale=1,
         ncams=6,
         nsweeps=3,
         # model

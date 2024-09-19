@@ -443,7 +443,7 @@ class Segnet(nn.Module):
             - (B, 16, Z, Y, X) when use_radar = True, use_metaradar = True
             - (B, 1, Z, Y, X) when use_lidar = True
         '''
-        
+        #pdb.set_trace()
         B, S, C, H, W = rgb_camXs.shape # (batch, 6, 3, H, W)
         assert(C==3) # assert that there is an error with the channel of the images.
         

@@ -4,7 +4,9 @@
 
 DATA_DIR="/mnt/ssd2/heejun/dataset/lyft"
 
-MODEL_NAME="16x3_5e-4s_rgb06_01:34:39"
+
+MODEL_NAME="8x5_5e-4_rgb12_22:43:46"
+
 
 EXP_NAME="eval"
 

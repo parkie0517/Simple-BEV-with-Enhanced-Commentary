@@ -17,6 +17,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tensorboardX import SummaryWriter
 import torch.nn.functional as F
+import pdb
 
 random.seed(125)
 np.random.seed(125)
@@ -115,8 +116,9 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             d: data sample
     """
 
-    
+
     metrics = {}
+    
     
     """
         Loss variable
@@ -125,10 +127,20 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     """
     total_loss = torch.tensor(0.0, requires_grad=True).to(device) 
 
+
     imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, radar_data, egopose = d
 
+
+    """
+        Explanation about the imgs
+            B0: batch size
+            T: Temporal dimension
+            S: number of cameras
+            C, H, W: shape of the each image
+    """
     B0,T,S,C,H,W = imgs.shape
-    assert(T==1)
+    assert(T==1) # assert an error if the temporal dimension is not 1.
+
 
     # eliminate the time dimension
     imgs = imgs[:,0]

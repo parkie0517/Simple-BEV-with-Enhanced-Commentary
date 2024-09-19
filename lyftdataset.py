@@ -572,7 +572,7 @@ def get_local_map(nmap, center, stretch, layer_names, line_names):
 class NuscData(torch.utils.data.Dataset):
     def __init__(self, nusc, is_train, data_aug_conf, centroid=None, bounds=None, res_3d=None, nsweeps=1, seqlen=1, refcam_id=1, get_tids=False, temporal_aug=False, use_radar_filters=False, do_shuffle_cams=True):
         self.nusc = nusc
-        import pdb;pdb.set_trace()
+
         self.is_train = is_train
         self.data_aug_conf = data_aug_conf
         # self.grid_conf = grid_conf
@@ -1069,7 +1069,7 @@ class VizData(NuscData):
 
         lrtlist_, boxlist_, vislist_, tidlist_ = self.get_lrtlist(rec)
         N_ = lrtlist_.shape[0]
-        import pdb;pdb.set_trace()
+
         if N_ > 0:
             
             velo_T_cam = utils.geom.merge_rt(rots, trans)
@@ -1265,7 +1265,7 @@ def compile_data(version, dataroot, data_aug_conf, centroid, bounds, res_3d, bsz
     nusc = LyftDataset(data_path=dataroot,
                         json_path=os.path.join(dataroot, 'train_data'), # replace `train_data` with `test_data` if you want to use the test dataset
                         verbose=True)
-    #import pdb;pdb.set_trace()
+
     print('making parser...')
     traindata = VizData(
         nusc,

@@ -349,8 +349,6 @@ def main(
     seg_loss_fn = SimpleLoss(2.13).to(device)
 
     # set up model
-    import time
-    start = time.time()
     model = Segnet(Z, Y, X, use_radar=use_radar, use_lidar=use_lidar, use_metaradar=use_metaradar, do_rgbcompress=do_rgbcompress, encoder_type=encoder_type)
     model = model.to(device)
     model = torch.nn.DataParallel(model, device_ids=device_ids)
@@ -359,19 +357,13 @@ def main(
     print('total_params', total_params)
 
     # load checkpoint
-
-
     _ = saverloader.load(init_dir, model.module, ignore_load=ignore_load)
-    end = time.time()
-    print(end - start) # time in seconds
-    start = time.time()
     global_step = 0
     requires_grad(parameters, False)
 
 
     model.eval()
-    end = time.time()
-    print(end - start) # time in seconds
+
 
     # logging pools. pool size should be larger than max_iters
     n_pool = 10000

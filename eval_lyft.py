@@ -128,6 +128,12 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     total_loss = torch.tensor(0.0, requires_grad=True).to(device) 
 
 
+    """
+        Explanation about the variables below
+            imgs: the actual image tensors
+            rots, trans, intrins: matrices about each of the cameras
+            egopose: pose of the ego car
+    """
     imgs, rots, trans, intrins, pts0, extra0, pts, extra, lrtlist_velo, vislist, tidlist, scorelist, seg_bev_g, valid_bev_g, center_bev_g, offset_bev_g, radar_data, egopose = d
 
 
@@ -242,7 +248,9 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             cam0_T_camXs=cam0_T_camXs,
             vox_util=vox_util,
             rad_occ_mem0=in_occ_mem0)
+    
 
+    pdb.set_trace()
     ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g)
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)
     offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True)

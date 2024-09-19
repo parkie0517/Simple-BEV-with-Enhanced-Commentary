@@ -284,7 +284,7 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     metrics['ce_loss'] = ce_loss.item()
     metrics['center_loss'] = center_loss.item()
     metrics['offset_loss'] = offset_loss.item()
-    pdb.set_trace()
+    
     if True: # set this to `False` if you do not want the visualized results
         #if model.module.use_radar or model.module.use_lidar:
         #    sw.summ_occ('0_inputs/rad_occ_mem0', rad_occ_mem0)
@@ -348,7 +348,8 @@ def main(
     writer_ev = SummaryWriter(os.path.join(log_dir, model_name + '/ev'), max_queue=10, flush_secs=60)
 
     # set up dataloader
-    final_dim = (int(224 * res_scale), int(416 * res_scale))
+    #final_dim = (int(224 * res_scale), int(416 * res_scale))
+    final_dim = (int(224 * res_scale), int(480 * res_scale)) # had to change 416 -> 480 (this is how FIERY used the input data)
     print('resolution:', final_dim)
     
     data_aug_conf = {
@@ -376,9 +377,9 @@ def main(
         get_tids=True,
     )
     val_iterloader = iter(val_dataloader)
-
+    
     max_iters = len(val_dataloader) # determine iters by length of dataset
-
+    
     # set seg loss
     seg_loss_fn = SimpleLoss(2.13).to(device)
 

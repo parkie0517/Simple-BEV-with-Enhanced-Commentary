@@ -250,7 +250,7 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             rad_occ_mem0=in_occ_mem0)
     
 
-    pdb.set_trace()
+    #pdb.set_trace()
     ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g)
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)
     offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True)
@@ -278,16 +278,16 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
     seg_bev_e_round = torch.sigmoid(seg_bev_e).round()
     intersection = (seg_bev_e_round*seg_bev_g*valid_bev_g).sum()
     union = ((seg_bev_e_round+seg_bev_g)*valid_bev_g).clamp(0,1).sum()
-
+    iou = (intersection/(1e-4 + union)).mean()
     metrics['intersection'] = intersection.item()
     metrics['union'] = union.item()
     metrics['ce_loss'] = ce_loss.item()
     metrics['center_loss'] = center_loss.item()
     metrics['offset_loss'] = offset_loss.item()
-
-    if sw is not None and sw.save_this:
-        if model.module.use_radar or model.module.use_lidar:
-            sw.summ_occ('0_inputs/rad_occ_mem0', rad_occ_mem0)
+    pdb.set_trace()
+    if True: # set this to `False` if you do not want the visualized results
+        #if model.module.use_radar or model.module.use_lidar:
+        #    sw.summ_occ('0_inputs/rad_occ_mem0', rad_occ_mem0)
         sw.summ_occ('0_inputs/occ_mem0', occ_mem0)
         sw.summ_rgb('0_inputs/rgb_camXs', torch.cat(rgb_camXs[0:1].unbind(1), dim=-1))
 

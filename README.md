@@ -75,3 +75,21 @@ For the `lyft` dataset, use the code below.
 ```
 sh ./eval_lyft_rgb.sh
 ```
+
+
+## Issues
+1. **seaborn-whitegrid error**  
+I encoutered the error below.  
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'seaborn-whitegrid'
+```
+
+And this is how I fixed it.  
+
+```
+open up this file
+"/home/user/anaconda3/envs/hj_simplebev/lib/python3.10/site-packages/nuscenes/map_expansion/map_api.py"
+
+then, go to line 32.
+change `seaborn-whitegrid` to whatever that is available.
+```

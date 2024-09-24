@@ -17,7 +17,6 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from tensorboardX import SummaryWriter
 import torch.nn.functional as F
-import pdb
 
 random.seed(125)
 np.random.seed(125)
@@ -250,7 +249,6 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             rad_occ_mem0=in_occ_mem0)
     
 
-    #pdb.set_trace()
     ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g)
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)
     offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True)
@@ -377,10 +375,23 @@ def main(
         do_shuffle_cams=False,
         get_tids=True,
     )
+
+    if mini == True:
+        print('using subset of the validation dataset')
+        from torch.utils.data import Subset
+        subset_size = B * log_freq
+        subset_indices = list(range(subset_size))
+        subset = Subset(val_dataloader.dataset, subset_indices)
+        val_dataloader = torch.utils.data.DataLoader(
+        subset,
+        batch_size=B,  # Keep the same batch size
+        shuffle=False,          # Set to True if you want to shuffle
+        num_workers=nworkers  # Maintain the same number of workers
+)
+
+
     val_iterloader = iter(val_dataloader)
-    
     max_iters = len(val_dataloader) # determine iters by length of dataset
-    
     # set seg loss
     seg_loss_fn = SimpleLoss(2.13).to(device)
 

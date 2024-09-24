@@ -938,6 +938,10 @@ class NuscData(torch.utils.data.Dataset):
         return center.squeeze(0), offset.squeeze(0), size_bev.squeeze(0), ry_bev.squeeze(0), ycoord_bev.squeeze(0) # 1,Z,X; 2,Z,X; 3,Z,X; 1,Z,X
 
     def get_lrtlist(self, rec):
+        """
+            Extracts and transforms 3D bounding box data (location, rotation, size) of visible vehicles from a LiDAR sample
+            Returns bounding boxes, visibility status, and instance tokens
+        """
         egopose = self.nusc.get('ego_pose', self.nusc.get('sample_data', rec['data']['LIDAR_TOP'])['ego_pose_token'])
         trans = -np.array(egopose['translation'])
         rot = Quaternion(egopose['rotation']).inverse
@@ -1025,6 +1029,10 @@ class VizData(NuscData):
         self.Z, self.Y, self.X = Z, Y, X
 
     def get_single_item(self, index, cams, refcam_id=None):
+        """
+            Creates the actual sample
+        """
+
         # print('index %d; cam_id' % index, cam_id)
         rec = self.ixes[index]
 

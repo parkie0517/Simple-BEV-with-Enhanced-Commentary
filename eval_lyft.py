@@ -349,6 +349,7 @@ def main(
     # set up dataloader
     #final_dim = (int(224 * res_scale), int(416 * res_scale))
     final_dim = (int(224 * res_scale), int(480 * res_scale)) # had to change 416 -> 480 (this is how FIERY used the input data)
+    final_dim = (int(448 * res_scale), int(800 * res_scale)) # had to change 416 -> 480 (this is how FIERY used the input data)
     print('resolution:', final_dim)
     
     data_aug_conf = {

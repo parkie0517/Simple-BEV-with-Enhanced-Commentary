@@ -1183,6 +1183,7 @@ class VizData(NuscData):
         all_offset_bev = []
         all_radar_data = []
         all_egopose = []
+        
         for index_t in self.indices[index]:
             # print('grabbing index %d' % index_t)
             imgs, rots, trans, intrins, lidar0_data, lidar0_extra, lidar_data, lidar_extra, \

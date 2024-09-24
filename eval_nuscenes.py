@@ -250,7 +250,6 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             2. Center Loss
             3. Offset Loss
     """
-    import pdb; pdb.set_trace()
 
     ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g) # prediction, GT, valid mask 
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)

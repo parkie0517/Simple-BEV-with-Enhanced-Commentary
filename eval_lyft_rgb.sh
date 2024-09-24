@@ -31,7 +31,7 @@ python eval_lyft.py \
        --init_dir="checkpoints/${MODEL_NAME}" \
        --res_scale=1 \
        --device_ids=[3] \
-       --mini=True
+       --mini=False
 
 
 :<<"End2"

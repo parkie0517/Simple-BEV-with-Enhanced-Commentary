@@ -945,12 +945,20 @@ class NuscData(torch.utils.data.Dataset):
         egopose = self.nusc.get('ego_pose', self.nusc.get('sample_data', rec['data']['LIDAR_TOP'])['ego_pose_token'])
         trans = -np.array(egopose['translation'])
         rot = Quaternion(egopose['rotation']).inverse
-        lrtlist = []
-        boxlist = []
-        vislist = []
-        tidlist = []
+        lrtlist = [] # location, rotation, translation list
+        boxlist = [] # box list
+        vislist = [] # visible list
+        tidlist = [] # token id list
+
+        
+
         for tok in rec['anns']:
-            inst = self.nusc.get('sample_annotation', tok)
+            """
+                Loop over all the annotations in this sample
+                    - tok: a token of a certain annotation
+                    - type(tok): string
+            """
+            inst = self.nusc.get('sample_annotation', tok) # inst is a dictionary type data
             if not self.is_lyft:
                 # NuScenes filter
                 if 'vehicle' not in inst['category_name']:
@@ -961,7 +969,12 @@ class NuscData(torch.utils.data.Dataset):
                     vislist.append(torch.tensor(1.0)) # visible
             else:
                 # Lyft filter
-                if inst['category_name'] not in ['bus', 'car', 'construction_vehicle', 'trailer', 'truck']:
+
+                """Select which subset of classes to evaluate"""
+                eval_class = ['bus', 'car', 'construction_vehicle', 'trailer', 'truck'] # original
+                # eval_class = ['car', 'construction_vehicle', 'trailer', 'other_vehicle', 'bus', 'motorcycle', 'truck', 'emergency_vehicle', 'bicycle'] # all vehicles
+                # eval_class = ['bus', 'other_vehicle', 'car', 'construction_vehicle', 'trailer', 'truck'] # original + `other_vehicle`
+                if inst['category_name'] not in eval_class:
                     continue
                 vislist.append(torch.tensor(1.0)) # visible
                 
@@ -985,6 +998,9 @@ class NuscData(torch.utils.data.Dataset):
             box_ = torch.from_numpy(np.stack([t,l,rs])).reshape(9)
             # print('box_', box_)
             boxlist.append(box_)
+        
+
+
         if len(lrtlist):
             lrtlist = torch.stack(lrtlist, dim=0)
             boxlist = torch.stack(boxlist, dim=0)

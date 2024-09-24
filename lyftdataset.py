@@ -604,10 +604,11 @@ class NuscData(torch.utils.data.Dataset):
         
         self.ixes = self.prepro() # samples of the dataset are stored here
         
-        if temporal_aug:
+        if temporal_aug: # this would normally be False
             self.indices = self.get_indices_tempaug()
         else:
-            self.indices = self.get_indices()
+            self.indices = self.get_indices() # returns a (16506, 1) shaped nddarry 
+       
 
         self.get_tids = get_tids
 
@@ -1189,7 +1190,7 @@ class VizData(NuscData):
             imgs, rots, trans, intrins, lidar0_data, lidar0_extra, lidar_data, lidar_extra, \
             lrtlist, vislist, tidlist, scorelist, \
             seg_bev, valid_bev, center_bev, offset_bev, size_bev, ry_bev, ycoord_bev, \
-            radar_data, egopose = self.get_single_item(index_t, cams, refcam_id=refcam_id)
+            radar_data, egopose = self.get_single_item(index_t, cams, refcam_id=refcam_id) # this is the most important function
             """
             There seems to be a problem when running the function above.
             This function is ran even when I do not want to use the radar data.

@@ -10,7 +10,6 @@ import utils.vox
 import utils.misc
 import utils.basic
 
-import pdb
 
 from torchvision.models.resnet import resnet18
 from efficientnet_pytorch import EfficientNet
@@ -169,6 +168,7 @@ class Decoder(nn.Module):
                 - view(): this function is used to reshape tensors
                 - *: unpacking operator
         """
+
         return {
             'raw_feat': x,
             'feat': feat_output.view(b, *feat_output.shape[1:]),
@@ -400,6 +400,7 @@ class Segnet(nn.Module):
         1. process multi-modal data using a u-net structure
         2. multiple heads to create different types of output
         """
+
         self.decoder = Decoder( # The decoder has 3,830,788
             in_channels=latent_dim,
             n_classes=1,
@@ -443,7 +444,7 @@ class Segnet(nn.Module):
             - (B, 16, Z, Y, X) when use_radar = True, use_metaradar = True
             - (B, 1, Z, Y, X) when use_lidar = True
         '''
-        #pdb.set_trace()
+        
         B, S, C, H, W = rgb_camXs.shape # (batch, 6, 3, H, W)
         assert(C==3) # assert that there is an error with the channel of the images.
         

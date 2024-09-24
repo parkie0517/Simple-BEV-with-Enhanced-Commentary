@@ -43,16 +43,24 @@ def requires_grad(parameters, flag=True):
 class SimpleLoss(torch.nn.Module):
     def __init__(self, pos_weight):
         super(SimpleLoss, self).__init__() # call super() to invoke init() in its parent class
-        self.loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([pos_weight]), reduction='none')
+        self.loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([pos_weight]), reduction='none') # increase importance of positive samples controlling the `pos_weight` variable
 
     def forward(self, ypred, ytgt, valid):
         """
-            ypred.shape = (batch, 1, 200, 200)
-            ypred.shape = (batch, 1, 200, 200)
-            loss.shape = (batch, 1, 200, 200)
-            valid.shape = (batch, 1, 200, 200)
+            - ypred
+                - ypred.shape = (batch, 1, 200, 200)
+                - values range from something like (-29.7268 ~ 13.3091)
+            
+            - ytgt
+                - ytgt.shape = (batch, 1, 200, 200)
+                - values are either `0` or `1`
+                - number of 0s are 39000ish
+                - number of 1s are 1000ish
+            
+            - valid
+                - valid.shape = (batch, 1, 200, 200)
         """
-        
+
         loss = self.loss_fn(ypred, ytgt) # memoreize the order of the input
         loss = utils.basic.reduce_masked_mean(loss, valid)
         """
@@ -242,7 +250,9 @@ def run_model(model, loss_fn, d, device='cuda:0', sw=None):
             2. Center Loss
             3. Offset Loss
     """
-    ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g) # prediction, GT, valid mask
+    import pdb; pdb.set_trace()
+
+    ce_loss = loss_fn(seg_bev_e, seg_bev_g, valid_bev_g) # prediction, GT, valid mask 
     center_loss = balanced_mse_loss(center_bev_e, center_bev_g)
     offset_loss = torch.abs(offset_bev_e-offset_bev_g).sum(dim=1, keepdim=True) # (B, 2, 200, 200) ----> (B, 1, 200, 200)
     offset_loss = utils.basic.reduce_masked_mean(offset_loss, seg_bev_g*valid_bev_g)

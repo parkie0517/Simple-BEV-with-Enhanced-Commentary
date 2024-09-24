@@ -30,12 +30,14 @@ python eval_lyft.py \
        --log_dir='logs_eval_lyft' \
        --init_dir="checkpoints/${MODEL_NAME}" \
        --res_scale=1 \
-       --device_ids=[3]
+       --device_ids=[3] \
+       --mini=True
 
 
 :<<"End2"
 
 Explanation of the flags
        dset: make sure is `lyft`
+       mini: if set to `True` then, only evaulate a portion of the validation dataset
 
 End2

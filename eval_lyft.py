@@ -441,7 +441,7 @@ def main(
         sw_ev.save_this = False
         
         try:
-            sample = next(val_iterloader)
+            sample = next(val_iterloader) # this will indirectly call the __getitem__()
         except StopIteration:
             break
 

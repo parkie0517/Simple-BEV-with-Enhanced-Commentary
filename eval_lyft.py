@@ -329,6 +329,7 @@ def main(
         do_rgbcompress=True,
         # cuda
         device_ids=[0, 1, 2, 3],
+        mini=False, # original value should be set to False
 ):
     B = batch_size
     assert(B % len(device_ids) == 0) # batch size must be divisible by number of gpus

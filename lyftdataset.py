@@ -597,12 +597,13 @@ class NuscData(torch.utils.data.Dataset):
 
         
         
-        self.scenes = self.get_scenes()
+        self.scenes = self.get_scenes() # for validation set, there are 49 scenes in total
         
         # print('applying hack to use just first scene')
         # self.scenes = self.scenes[0:1]
         
-        self.ixes = self.prepro()
+        self.ixes = self.prepro() # samples of the dataset are stored here
+        
         if temporal_aug:
             self.indices = self.get_indices_tempaug()
         else:

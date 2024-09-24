@@ -24,7 +24,7 @@ End1
 
 python eval_lyft.py \
        --exp_name=${EXP_NAME} \
-       --batch_size=1 \
+       --batch_size=4 \
        --dset='lyft' \
        --data_dir=$DATA_DIR \
        --log_dir='logs_eval_lyft' \
